@@ -4,6 +4,7 @@ using System.Numerics;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UIElements;
+using Quaternion = UnityEngine.Quaternion;
 using Vector3 = UnityEngine.Vector3;
 
 public class PlayerController : MonoBehaviour {
@@ -14,6 +15,8 @@ public class PlayerController : MonoBehaviour {
     public float minMoveSpeed = 1f;
     private new Rigidbody rigidbody;
     private Vector3 velocity = Vector3.zero;
+    private Vector3 spawnOrigin = Vector3.zero;
+    private Quaternion spawnRotation = Quaternion.identity;
 
     public float camDist = 0f;
     public float minCamDist = 10f;
@@ -26,13 +29,21 @@ public class PlayerController : MonoBehaviour {
 
     void Start() {
         rigidbody = pawn.GetComponent<Rigidbody>();
+        spawnOrigin = pawn.position;
+        spawnRotation = pawn.rotation;
+    }
+
+    public float tempo = 1f;
+    public void SetTempo(float tempo) {
+        this.tempo = tempo;
     }
 
     void Update() {
         var gamepad = Gamepad.current;
         if (gamepad != null) {
             if (gamepad.leftStickButton.isPressed && gamepad.rightStickButton.isPressed) {
-                pawn.transform.position = Vector3.zero;
+                pawn.position = spawnOrigin;
+                pawn.rotation = spawnRotation;
             }
             var ls = gamepad.leftStick.ReadValue();
             ls.x = Mathf.Pow(ls.x, 3f);
@@ -50,6 +61,11 @@ public class PlayerController : MonoBehaviour {
             var TELEPORT_DURATION = 0.2f;
             var TELEPORT_SPEED = TELEPORT_DIST / TELEPORT_DURATION;
             var TELEPORT_DECAY_RATE = 10f;
+
+            MOVE_SPEED_BASE *= tempo;
+            MOVE_SPEED_ACCEL *= tempo;
+            TELEPORT_SPEED *= tempo;
+            TELEPORT_COOLDOWN /= tempo;
 
             bool teleport = gamepad.buttonSouth.isPressed;
             bool teleportPressed = teleport && !lastTeleportButtonState;
