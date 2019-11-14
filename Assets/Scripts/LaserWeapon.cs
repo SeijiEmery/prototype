@@ -1,6 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
-using UnityEditor.UI;
+//using UnityEditor.UI;
 using UnityEngine;
 
 public class LaserWeapon : MonoBehaviour {
@@ -25,15 +25,15 @@ public class LaserWeapon : MonoBehaviour {
 
     private float minT, maxT, minY, maxY;
     void Start() {
-        minT = weaponDamageCurve.keys[0].time;
-        maxT = minT;
-        minY = weaponDamageCurve.keys[0].value;
-        maxY = minY;
-        foreach (var key in weaponDamageCurve.keys) {
-            var t = key.time; var y = key.value;
-            if (t < minT) minT = t; else if (t > maxT) maxT = t;
-            if (y < minY) minY = y; else if (y > maxY) maxY = y;
-        }
+//        minT = weaponDamageCurve.keys[0].time;
+//        maxT = minT;
+//        minY = weaponDamageCurve.keys[0].value;
+//        maxY = minY;
+//        foreach (var key in weaponDamageCurve.keys) {
+//            var t = key.time; var y = key.value;
+//            if (t < minT) minT = t; else if (t > maxT) maxT = t;
+//            if (y < minY) minY = y; else if (y > maxY) maxY = y;
+//        }
     }
     void Update() {
         if (fired) {
@@ -45,23 +45,22 @@ public class LaserWeapon : MonoBehaviour {
                 var dist = Vector3.Distance(targetPos, originPos);
                 transform.position = (targetPos + originPos) * 0.5f;
                 transform.LookAt(targetPos);
-//                transform.Rotate(Vector3.right, 90f);
                 var scale = transform.localScale;
                 scale.z = dist;
                 transform.localScale = scale;
                 
                 // apply damage
-                var elapsed = (Time.time - spawnTime) / lifetime;
-                var totalDamage = AreaUnderCurve(weaponDamageCurve, elapsed * (maxT - minT), (maxY - minY)) * damage;
-                var damageDelta = totalDamage - damageApplied;
-                damageApplied = totalDamage;
-                target.ApplyDamage(damageDelta);
+//                var elapsed = (Time.time - spawnTime) / lifetime;
+//                var totalDamage = AreaUnderCurve(weaponDamageCurve, elapsed * (maxT - minT), (maxY - minY)) * damage;
+//                var damageDelta = totalDamage - damageApplied;
+//                damageApplied = totalDamage;
+//                target.ApplyDamage(damageDelta);
             }
         } 
     }
     private void DestroySelf() {
-        var remainingDamage = AreaUnderCurve(weaponDamageCurve, maxT, (maxY - minY)) * damage;
-        target.ApplyDamage(remainingDamage - damageApplied);
+//        var remainingDamage = AreaUnderCurve(weaponDamageCurve, maxT, (maxY - minY)) * damage;
+//        target.ApplyDamage(remainingDamage - damageApplied);
         Destroy(gameObject);
     }
     

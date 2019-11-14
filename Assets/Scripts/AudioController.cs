@@ -15,16 +15,16 @@ public class AudioController : MonoBehaviour {
         public float tempo;
     }
     public AudioSource target;
-    public AudioConfig[] tracks;
     public int currentTrack = 0;
+    public AudioConfig[] tracks;
     public bool play = true;
-
+    public static float tempo = 1.0f;
     private PlayerController player; 
 
     // Start is called before the first frame update
     void Start() {
         player = GetComponent<PlayerController>();
-        PlayRandomTrack();
+        SetCurrentTrack(currentTrack);
     }
     public void PlayRandomTrack() {
         SetCurrentTrack(Mathf.FloorToInt(Random.Range(0f, tracks.Length)));
@@ -45,15 +45,20 @@ public class AudioController : MonoBehaviour {
             target.Stop();
             target.PlayOneShot(tracks[currentTrack].track);
             play = true;
-            player.SetTempo(tracks[currentTrack].tempo);
+            if (player != null)
+                player.SetTempo(tracks[currentTrack].tempo);
+            tempo = tracks[currentTrack].tempo;
         } else {
             target.Stop();
             play = false;
-            player.SetTempo(1f);
+            if (player != null)
+                player.SetTempo(1f);
+            tempo = 1f;
         }
     }
 
     private bool trackButtonWasPressed = false;
+    private bool kbTrackButtonWasPressed = false;
     
     // Update is called once per frame
     void Update() {
@@ -70,6 +75,21 @@ public class AudioController : MonoBehaviour {
                 PlayRandomTrack();
             }
             trackButtonWasPressed = nextTrackButton || prevTrackButton || randomTrackButton;
+        }
+
+        var kb = Keyboard.current;
+        if (kb != null) {
+            bool nextTrackButton = kb.rightArrowKey.isPressed;
+            bool prevTrackButton = kb.leftArrowKey.isPressed;
+            bool randomTrackButton = kb.spaceKey.isPressed;
+            if (!kbTrackButtonWasPressed && nextTrackButton) {
+                PlayNextTrack();
+            } else if (!kbTrackButtonWasPressed && prevTrackButton) {
+                PlayPrevTrack();
+            } else if (!kbTrackButtonWasPressed && randomTrackButton) {
+                PlayRandomTrack();
+            }
+            kbTrackButtonWasPressed = nextTrackButton || prevTrackButton || randomTrackButton;
         }
         if (play && !target.isPlaying) {
             PlayNextTrack();
