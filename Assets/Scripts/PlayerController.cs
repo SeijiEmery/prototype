@@ -27,6 +27,51 @@ public class PlayerController : MonoBehaviour {
     private bool lastTeleportButtonState = false;
     public Vector3 teleportVelocity = Vector3.zero;
 
+    public Transform[] firePoints;
+    public Projectile projectile;
+    public float projectileDamage = 10f;
+    public float projectileSpeed = 10f;
+    public float fireDelay = 0.8f;
+    public float burstDelay = 0.15f;
+    public int maxBurstCount = 5;
+
+    private float fireStartTime = -10f;
+    private float burstStartTime = -10f;
+    private bool fireLastPressed = false;
+    private int burstCount = 0;
+
+    public float fireRate = 1f;
+    void WeaponUpdate ()
+    {
+        var gamepad = Gamepad.current;
+        if (gamepad == null) return;
+
+        bool fire = gamepad.rightShoulder.isPressed;
+        bool fireDown = fire && !fireLastPressed;
+        fireLastPressed = fire;
+
+        bool canStartBurst = fireDown || (fire && Time.time > fireDelay / tempo / fireRate + fireStartTime);
+        bool canFireShot = canStartBurst || (fire && Time.time > burstDelay / tempo / fireRate + burstStartTime && burstCount < maxBurstCount);
+        if (canStartBurst)
+        {
+            fireStartTime = Time.time;
+            burstCount = 0;
+            FireOneShot();
+        } else if (canFireShot)
+        {
+            burstStartTime = Time.time;
+            ++burstCount;
+            FireOneShot();
+        }
+    }
+    private void FireOneShot ()
+    {
+        //Debug.Log("Firing!");
+        //var fp = firePoints[Random.Range(0, firePoints.Length)];
+        var fp = firePoints[burstCount % firePoints.Length];
+        var proj = GameObject.Instantiate(projectile, fp.position, fp.rotation);
+        proj.Fire(gameObject, projectileDamage, projectileSpeed * tempo, Targetable.Owner.PlayerFleet, (velocity + teleportVelocity) * 2f);// transform.rotation * Vector3.forward * 15f);
+    }
     void Start() {
         rigidbody = pawn.GetComponent<Rigidbody>();
         spawnOrigin = pawn.position;
@@ -39,6 +84,8 @@ public class PlayerController : MonoBehaviour {
     }
 
     void Update() {
+        WeaponUpdate();
+
         var gamepad = Gamepad.current;
         if (gamepad != null) {
             if (gamepad.leftStickButton.isPressed && gamepad.rightStickButton.isPressed) {
@@ -67,7 +114,7 @@ public class PlayerController : MonoBehaviour {
             TELEPORT_SPEED *= tempo;
             TELEPORT_COOLDOWN /= tempo;
 
-            bool teleport = gamepad.buttonSouth.isPressed;
+            bool teleport = gamepad.buttonSouth.isPressed || gamepad.rightTrigger.isPressed;
             bool teleportPressed = teleport && !lastTeleportButtonState;
             lastTeleportButtonState = teleport;
             if (teleportPressed && Time.time > lastTeleportTime + TELEPORT_COOLDOWN &&
@@ -80,9 +127,13 @@ public class PlayerController : MonoBehaviour {
 //                pawn.Translate(TELEPORT_DIST * ls.normalized);
             }
 
+            bool moveInWorldSpace = true;
+            var unrotate = moveInWorldSpace ?
+                Quaternion.Inverse(transform.rotation) : Quaternion.identity;
+
             velocity = Vector3.Lerp(
                 velocity,
-                velocity * Mathf.Clamp(1f - 10f * Time.deltaTime, 0f, 1f) 
+                velocity * Mathf.Clamp(1f - 10f * Time.deltaTime, 0f, 1f)
                     + (Vector3.forward * ls.y).normalized * MOVE_SPEED_BASE
                     + (Vector3.right * ls.x).normalized * MOVE_SPEED_BASE
                 ,
@@ -107,8 +158,8 @@ public class PlayerController : MonoBehaviour {
                 Debug.Log("executing direction switch (intensity: "+dpAngle+"): "+prevVel+" => "+velocity);
             }
             
-            pawn.Rotate(Vector3.up, 180f * 0.8f * Time.deltaTime * rs.x);
-            pawn.Translate((velocity + teleportVelocity) * Time.deltaTime);
+            pawn.Rotate(Vector3.up, 180f * 2.5f * Time.deltaTime * rs.x);
+            pawn.Translate(unrotate * (velocity + teleportVelocity) * Time.deltaTime);
             teleportVelocity *= Mathf.Clamp(1f - Time.deltaTime * TELEPORT_DECAY_RATE, 0f, 1f);
 
             var dist = 200f;
